@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Odin Playground</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <link href="https://unpkg.com/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+        <style>
+            .nav-tabs {
+                --bs-nav-tabs-link-active-color: var(--bs-light);
+                --bs-nav-tabs-link-active-bg: var(--bs-primary);
+                --bs-nav-tabs-link-active-border-color: var(--bs-gray);
+                --bs-nav-tabs-link-hover-border-color: var(--bs-gray);
+                --bs-nav-tabs-border-color: var(--bs-gray);
+                --bs-nav-link-color: var(--bs-light);
+                --bs-nav-link-hover-color: var(--bs-light);
+            }
+
+            [x-cloak] {
+                display: none;
+            }
+        </style>
+
+        <!-- <script src="https://unpkg.com/ace-builds@1.20.0/src-min-noconflict/ace.js" type="text/javascript" charset="utf-8"></script> -->
+        <script src="/ace-build/src/ace.js" defer></script>
+        <script src="https://unpkg.com/alpinejs@3.12.1/dist/cdn.min.js" defer></script>
+    </head>
+    <body
+        x-data="{
+            loading: true,
+            result: '',
+            opts: {
+                target: 'linux_amd64',
+                optimization: 'none',
+                build_mode: 'asm',
+            },
+            tab: 'exec',
+            init() {
+                const url = new URL(location);
+                if (url.pathname == '/') {
+                    this.loading = false;
+                    return;
+                }
+
+                fetch('/api/share' + url.pathname)
+                    .then((res) => res.json())
+                    .then((json) => {
+                        editor.setValue(json.code);
+                        this.opts = json.opts;
+                    })
+                    .finally(() => { this.loading = false; });
+            },
+        }"
+        class="container-fluid bg-dark text-light vh-100 py-2"
+    >
+        <div class="d-flex gap-5 h-100">
+            <div
+                x-init="
+                    window.editor = ace.edit('editor');
+                    window.editor.setTheme('ace/theme/one_dark');
+                    window.editor.session.setMode('ace/mode/odin');
+                "
+                id="editor"
+                class="rounded rounded"
+                style="min-width: min(100%, 80ch);"
+            >package main
+
+import "core:fmt"
+
+main :: proc() {
+    program := "+ + * 😃 - /"
+    accumulator := 0
+
+    for token in program {
+        switch token {
+        case '+': accumulator += 1
+        case '-': accumulator -= 1
+        case '*': accumulator *= 2
+        case '/': accumulator /= 2
+        case '😃': accumulator *= accumulator
+        case: // Ignore everything else
+        }
+    }
+
+    fmt.printf("The program \"%s\" calculates the value %d\n",
+           program, accumulator)
+}</div>
+            <div class="flex-grow-1 d-flex flex-column">
+                <ul class="nav nav-tabs mb-3" role="tablist">
+                    <li class="nav-item">
+                        <button
+                            @click="tab = 'exec'"
+                            :class="{'nav-link': true, 'active': tab == 'exec'}"
+                            type="button"
+                        >Execute</button>
+                    </li>
+                    <li class="nav-item">
+                        <button
+                            @click="tab = 'assemble'"
+                            :class="{'nav-link': true, 'active': tab == 'assemble'}"
+                            type="button"
+                        >Assemble</button>
+                    </li>
+                    <li class="nav-item">
+                        <button
+                            @click="tab = 'share'"
+                            :class="{'nav-link': true, 'active': tab == 'share'}"
+                            type="button"
+                        >Share</button>
+                    </li>
+                    <h1 class="h2 flex-grow-1 text-end m-0 p-0"><strong>Odin</strong> Playground</h1>
+                </ul>
+
+                <div x-show="tab == 'exec'" :class="{'flex-grow-1 flex-column': true, 'd-flex': tab == 'exec'}">
+                    <form :disabled="loading" @submit.prevent="
+                        loading = true;
+
+                        fetch('/api/exec', {
+                            method: 'POST',
+                            body: editor.getValue(),
+                        })
+                        .then((res) => res.text())
+                        .then((res) => { result = res; })
+                        .finally(() => { loading = false; });
+                    ">
+                        <div class="d-flex gap-3 align-items-center">
+                            <button :disabled="loading" type="submit" class="btn btn-primary">Go</button>
+                            <div x-show="loading" class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                        </div>
+                    </form>
+                    <hr>
+                    <div x-text="result"></div>
+                </div>
+                <div x-cloak x-show="tab == 'assemble'" :class="{'flex-grow-1 flex-column': true, 'd-flex': tab == 'assemble'}">
+                    <form :disabled="loading" @submit.prevent="
+                        loading = true;
+
+                        fetch('/api/assemble', {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                code: window.editor.getValue(),
+                                opts,
+                            }),
+                        })
+                        .then((res) => res.text())
+                        .then((res) => {
+                            window.asm.setValue(res);
+                            window.asm.session.foldAll();
+                            window.asm.gotoLine(window.asm.find('main').start.row);
+                        })
+                        .finally(() => { loading = false; })
+                    ">
+                        <div class="row mb-3 d-flex gap-3 align-items-end">
+                            <label for="target" class="col-3 form-label">
+                                Target:
+                            </label>
+                            <select x-model="opts.target" id="target" class="col-9 form-select" style="width: 20ch">
+                                <optgroup label="Linux">
+                                    <option value="linux_i386">Linux I386</option>
+                                    <option value="linux_amd64">Linux AMD64</option>
+                                    <option value="linux_arm64">Linux ARM64</option>
+                                    <option value="linux_arm32">Linux ARM32</option>
+                                </optgroup>
+                                <optgroup label="Darwin/MacOS">
+                                    <option value="darwin_amd64">Darwin AMD64</option>
+                                    <option value="darwin_arm64">Darwin ARM64</option>
+                                </optgroup>
+                                <optgroup label="Windows">
+                                    <option value="windows_i386">Windows I368</option>
+                                    <option value="windows_amd64">Windows AMD64</option>
+                                </optgroup>
+                                <optgroup label="BSD">
+                                    <option value="freebsd_i386">FreeBSD I386</option>
+                                    <option value="freebsd_amd64">FreeBSD AMD64</option>
+                                </optgroup>
+                                <optgroup label="WASM">
+                                    <option value="freestanding_wasm32">Freestanding WASM32</option>
+                                    <option value="wasi_wasm32">WASI WASM32</option>
+                                    <option value="js_wasm32">JS WASM32</option>
+                                </optgroup>
+                                <optgroup label="Other">
+                                    <option value="openbsd_amd64">OpenBSD AMD64</option>
+                                    <option value="essence_amd64">Essence AMD64</option>
+                                    <option value="freestanding_amd64_sysv">Freestanding AMD64 SYSV</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                        <div class="row mb-3 d-flex gap-3 align-items-end">
+                            <label for="optimization" class="col-3 form-label">
+                                Optimization:
+                            </label>
+                            <select x-model="opts.optimization" id="optimization" class="col-9 form-select" style="width: 20ch">
+                                <option value="none">None</option>
+                                <option value="minimal">Minimal</option>
+                                <option value="size">Size</option>
+                                <option value="speed">Speed</option>
+                            </select>
+                        </div>
+                        <div class="row mb-3 d-flex gap-3 align-items-end">
+                            <label for="optimization" class="col-3 form-label">
+                                Build Mode:
+                            </label>
+                            <select x-model="opts.build_mode" id="optimization" class="col-9 form-select" style="width: 20ch">
+                                <option value="asm" selected>Assembly</option>
+                                <option value="llvm">LLVM IR</option>
+                            </select>
+                        </div>
+                        <div class="d-flex gap-3 align-items-center">
+                            <button :disabled="loading" type="submit" class="btn btn-primary">Go</button>
+                            <div x-show="loading" class="spinner-border spinner-border-sm text-primary"></div>
+                        </div>
+                    </form>
+                    <hr>
+                    <div
+                        x-init="
+                            window.asm = ace.edit('asm-editor');
+                            window.asm.setTheme('ace/theme/one_dark');
+                            window.asm.session.setMode('ace/mode/assembly_x86');
+                            window.asm.setReadOnly(true);
+                        "
+                        id="asm-editor"
+                        class="rounded flex-grow-1"
+                    >
+                    </div>
+                </div>
+                <div x-cloak x-show="tab == 'share'" x-data="{share_link: ''}">
+                    <p>Share your code and configuration by creating a unique link</p>
+                    <div class="d-flex align-items-center gap-2">
+                        <button
+                            @click="
+                                loading = true;
+
+                                fetch('/api/share', {
+                                    method: 'POST',
+                                    body: JSON.stringify({
+                                        code: window.editor.getValue(),
+                                        opts,
+                                    }),
+                                })
+                                .then((res) => res.text())
+                                .then((id) => {
+                                    share_link = `${location.protocol}//${location.host}${id}`;
+                                    setTimeout(() => {$refs.share_link_el.select(); }, 100);
+                                })
+                                .finally(() => { loading = false; })
+                            "
+                            type="button"
+                            class="btn btn-primary"
+                            :disabled="loading"
+                        >Create Link</button>
+                        <input x-ref="share_link_el" x-show="share_link != ''" class="form-control w-auto bg-dark text-light" readonly type="text" :value="share_link">
+                        <div x-show="loading" class="spinner-border spinner-border-sm text-primary"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

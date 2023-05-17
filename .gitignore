@@ -1,0 +1,5 @@
+hiredis
+ace
+.terraform
+odin-playground.bin*
+.DS_Store
