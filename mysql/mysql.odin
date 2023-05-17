@@ -5,7 +5,11 @@ package mysql
 
 import "core:c"
 
-foreign import lib "./includes/libmysqlclient.21.dylib"
+when ODIN_OS == .Darwin {
+    foreign import lib "./includes/libmysqlclient.dylib"
+} else when ODIN_OS == .Linux {
+    foreign import lib "./includes/libmysqlclient.a"
+}
 
 // Opague structs, fields are never accessed (always through procedures),
 // so no need to define them in bindings.

@@ -6,7 +6,7 @@ import "core:time"
 import "core:fmt"
 import "core:strconv"
 
-import http "../odin-http"
+import http "pkg/odin-http"
 
 store: Store
 
