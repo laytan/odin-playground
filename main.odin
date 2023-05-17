@@ -64,7 +64,7 @@ main :: proc() {
 	with_logger := http.middleware_logger(&route_handler, &http.Logger_Opts{log_time = true})
 
 	log.warnf("Server stopped: %v", http.listen_and_serve(&s, &with_logger, net.Endpoint{
-        address = net.IP4_Loopback,
+        address = net.IP4_Any,
         port = port,
     }))
 }
