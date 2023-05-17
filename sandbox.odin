@@ -160,14 +160,23 @@ sandbox_execute :: proc(code: []byte, mode: Sandbox_Mode, asm_opts: Maybe(Assemb
     file := temp_file(&r, allocator)
     dir := filepath.dir(file, allocator)
 
-    if err := os.make_directory(dir); err != 0 {
+    if err := os.make_directory(dir, 0o777); err != 0 {
         log.errorf("could not create temp directory %q: %s", dir, err)
         rerr = .FileSystem
         return
     }
     defer os.remove(dir)
 
-    if !os.write_entire_file(file, code) {
+    fh, err := os.open(file, os.O_WRONLY|os.O_CREATE, 0o777)
+    if err != os.ERROR_NONE {
+        log.errorf("could not create source file: %s", err)
+        rerr = .FileSystem
+        return
+    }
+    defer os.close(fh)
+
+    _, werr := os.write(fh, code)
+    if werr != os.ERROR_NONE {
         log.errorf("could not write code %q to %q", code, file)
         rerr = .FileSystem
         return
@@ -226,7 +235,7 @@ RANDOM_CHOICES := []byte{
 }
 
 @(private="file")
-TMP :: "/var/tmp/playground-"
+TMP :: "/tmp/playground-"
 @(private="file")
 TMP_LEN :: len(TMP)
 @(private="file")
