@@ -5,8 +5,11 @@ import "core:encoding/json"
 import "core:time"
 import "core:fmt"
 import "core:strconv"
+import "core:net"
 
 import http "pkg/odin-http"
+
+port := #config(PORT, 8080)
 
 store: Store
 
@@ -60,7 +63,10 @@ main :: proc() {
 	route_handler := http.router_handler(&router)
 	with_logger := http.middleware_logger(&route_handler, &http.Logger_Opts{log_time = true})
 
-	log.warnf("Server stopped: %v", http.listen_and_serve(&s, &with_logger))
+	log.warnf("Server stopped: %v", http.listen_and_serve(&s, &with_logger, net.Endpoint{
+        address = net.IP4_Loopback,
+        port = port,
+    }))
 }
 
 

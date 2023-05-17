@@ -7,8 +7,8 @@ import "core:c"
 
 when ODIN_OS == .Darwin {
     foreign import lib "./includes/libmysqlclient.dylib"
-} else when ODIN_OS == .Linux {
-    foreign import lib "./includes/libmysqlclient.a"
+} else {
+    foreign import lib "system:mysqlclient"
 }
 
 // Opague structs, fields are never accessed (always through procedures),
