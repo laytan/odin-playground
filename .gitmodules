@@ -1,0 +1,3 @@
+[submodule "pkg/odin-http"]
+	path = pkg/odin-http
+	url = https://github.com/laytan/odin-http
