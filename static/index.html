@@ -126,7 +126,8 @@ main :: proc() {
                         .then((res) => { result = res; })
                         .finally(() => { loading = false; });
                     ">
-                        <p>Code is executed on Alpine Linux, other platforms are in the works.</p>
+                    <p>Code is executed on Alpine Linux, other platforms are in the works.<br>
+                       Odin is updated daily at midnight UTC to the latest commit on master.</p>
                         <div class="d-flex gap-3 align-items-center">
                             <button :disabled="loading" type="submit" class="btn btn-primary">Go</button>
                             <div x-show="loading" class="spinner-border spinner-border-sm text-primary" role="status"></div>
