@@ -183,6 +183,9 @@ sandbox_execute :: proc(code: []byte, mode: Sandbox_Mode, asm_opts: Maybe(Assemb
     }
     defer os.remove(file)
 
+    // REALLY hacky, but for some reason the modes applied above don't actually do anything.
+    libc.system(strings.clone_to_cstring(fmt.tprintf("chmod -R 777 %s", dir)))
+
     out := strings.concatenate([]string{file, ".out"}, allocator)
 
     container_cmd: string
