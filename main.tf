@@ -2,11 +2,21 @@ provider "aws" {
   region  = "eu-central-1"
 }
 
+# You probably need to attach the static IP in the lightsail interface, this doesn't happen automatically most of the time.
 resource "aws_lightsail_instance" "odin_playground" {
   name = "odin_playground"
   availability_zone = "eu-central-1a"
   blueprint_id = "ubuntu_22_04"
   bundle_id = "micro_2_0"
+  # Runs the following commands to set up the instance, ready for deploys from the GitHub workflow.
+  # Give it some time after the instance is created because this takes time, progress can't be seen easily.
+  # This does the following:
+  # - install installation dependencies for docker: ca-certificates curl gnupg
+  # - install a recent apt list for docker
+  # - install docker and odin dependencies
+  # - clone odin and compile it
+  # - clone playground and build the "sandbox" dockerfile
+  user_data = "sudo apt-get update && sudo apt-get install -y --no-install-recommends ca-certificates curl gnupg && sudo install -m 0755 -d /etc/apt/keyrings && curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg && sudo chmod a+r /etc/apt/keyrings/docker.gpg && echo \"deb [arch=\"$(dpkg --print-architecture)\" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \"$(. /etc/os-release && echo \"$VERSION_CODENAME\")\" stable\" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null && sudo apt-get update && DEBIAN_FRONTEND=noninteractive sudo apt-get install -y --no-install-recommends docker-ce docker-ce-cli containerd.io docker-buildx-plugin make clang llvm-14 llvm-14-dev supervisor libmysqlclient-dev && sudo su ubuntu && git clone --depth=1 https://github.com/odin-lang/Odin /home/ubuntu/odin && cd /home/ubuntu/odin && make && git clone --depth=1 --recurse-submodules https://github.com/laytan/odin-playground /home/ubuntu/odin-playground && cd /home/ubuntu/odin-playground && sudo docker build -t odin-playground:latest ."
 }
 
 resource "aws_lightsail_instance_public_ports" "odin_playground" {
