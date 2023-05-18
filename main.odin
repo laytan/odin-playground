@@ -13,8 +13,6 @@ port := #config(PORT, 8080)
 
 store: Store
 
-// TODO: rebuild docker image from time to time to update odin, (probably cron and not in odin).
-
 // TODO: friendly share id's (snowflake?).
 
 // TODO: stop ace editor selecting everything after a setValue call.
