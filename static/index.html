@@ -47,7 +47,8 @@
                 fetch('/api/share' + url.pathname)
                     .then((res) => res.json())
                     .then((json) => {
-                        editor.setValue(json.code);
+                        window.editor.setValue(json.code);
+                        window.editor.clearSelection();
                         this.opts = json.opts;
                     })
                     .finally(() => { this.loading = false; });
@@ -148,6 +149,7 @@ main :: proc() {
                         .then((res) => res.text())
                         .then((res) => {
                             window.asm.setValue(res);
+                            window.asm.clearSelection();
                             window.asm.session.foldAll();
                             window.asm.gotoLine(window.asm.find('main').start.row);
                         })

@@ -14,7 +14,6 @@ port := #config(PORT, 8080)
 
 store: Store
 
-// TODO: stop ace editor selecting everything after a setValue call.
 main :: proc() {
     when ODIN_DEBUG {
         context.logger = log.create_console_logger()
