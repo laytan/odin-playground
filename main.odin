@@ -13,13 +13,17 @@ port := #config(PORT, 8080)
 
 store: Store
 
-// TODO: rebuild docker image from time to time to update odin.
+// TODO: rebuild docker image from time to time to update odin, (probably cron and not in odin).
 
 // TODO: println() should add newline on front-end too.
 
 // TODO: friendly share id's (snowflake?).
 main :: proc() {
-	context.logger = log.create_console_logger()
+    when ODIN_DEBUG {
+        context.logger = log.create_console_logger()
+    } else {
+        context.logger = log.create_console_logger(log.Level.Info)
+    }
 
 	store_init(&store)
 	defer store_destroy(&store)
@@ -32,6 +36,7 @@ main :: proc() {
 	router: http.Router
 	http.router_init(&router)
 
+    // TODO: get share doesn't encode json properly with unicode (at least with the default Hellope).
 	http.route_get(&router, "/api/share/(%d+)", http.handler(handle_get_share))
 	http.route_get(&router, "/", http.handler(handle_index))
 	http.route_get(&router, "/%d+", http.handler(handle_index))
@@ -61,6 +66,8 @@ main :: proc() {
 	http.route_post(&router, ".*", post_rate_limited)
 
 	route_handler := http.router_handler(&router)
+
+    // TODO: nicer time logged.
 	with_logger := http.middleware_logger(&route_handler, &http.Logger_Opts{log_time = true})
 
 	log.warnf("Server stopped: %v", http.listen_and_serve(&s, &with_logger, net.Endpoint{
