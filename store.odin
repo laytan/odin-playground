@@ -53,7 +53,6 @@ store_init :: proc(store: ^Store) -> (ok: bool) {
     if dbname == "" do panic("you must define DB_NAME")
     cdbname := strings.clone_to_cstring(dbname)
 
-	// TODO: from configuration:
 	if mysql.connect(store.c, chost, cuname, cpassword, cdbname) == nil {
 		log.errorf("failed to connect to database, error: %s", mysql.error(store.c))
 		return

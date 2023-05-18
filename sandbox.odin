@@ -25,10 +25,6 @@ MAX_MEMORY  :: "256mb"
 @(private="file")
 MAX_CPU :: "1"
 
-// TODO: add some randomness to this.
-@(private="file")
-END_ASSEMBLY_MARKER :: "\nPLAYGROUND-END-ASSEMBLY-PLAYGROUND\n"
-
 Sandbox_Error :: enum {
     None,
     TimeoutExceeded, // TODO: detect timeout.
