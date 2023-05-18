@@ -15,7 +15,8 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ubuntu
           key: ${{ secrets.SSH_KEY }}
-          port: 22
+          script_stop: true
+          debug: true
           script: |
             cd ~/odin-playground
             git pull

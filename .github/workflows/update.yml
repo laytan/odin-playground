@@ -14,7 +14,7 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ubuntu
           key: ${{ secrets.SSH_KEY }}
-          port: 22
+          script_stop: true
           script: |
             cd ~/odin-playground
-            sudo docker build -t odin-playground:latest .
+            sudo docker build --no-cache -t odin-playground:latest .
