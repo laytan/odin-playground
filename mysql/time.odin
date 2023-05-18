@@ -41,20 +41,12 @@ Time :: struct {
 MICROSECONDS_PER_SECOND :: 1e+6
 
 @(private)
-time_parts :: proc(t: time.Time) -> (hour, min, sec: c.uint, microsecond: c.ulong) {
+time_parts :: proc(t: time.Time) -> (c.uint, c.uint, c.uint, c.ulong) {
+    t := time.now()
 	nsec := time.to_unix_nanoseconds(t)
-
-	sec = c.uint(nsec % time.SECONDS_PER_DAY)
-
-	hour = sec / time.SECONDS_PER_HOUR
-	sec -= hour * time.SECONDS_PER_HOUR
-
-	min = sec / time.SECONDS_PER_MINUTE
-	sec -= min * time.SECONDS_PER_MINUTE
-
-	// TODO: is this correct?
-	microsecond = c.ulong(nsec % MICROSECONDS_PER_SECOND)
-	return
+    micro := c.ulong(((nsec / 1000) % MICROSECONDS_PER_SECOND))
+    hour, min, sec := time.clock_from_time(t)
+    return c.uint(hour), c.uint(min), c.uint(sec), micro
 }
 
 @(private)
