@@ -132,7 +132,7 @@ main :: proc() {
                         </div>
                     </form>
                     <hr>
-                    <div x-text="result"></div>
+                    <pre x-text="result"></pre>
                 </div>
                 <div x-cloak x-show="tab == 'assemble'" :class="{'flex-grow-1 flex-column': true, 'd-flex': tab == 'assemble'}">
                     <form :disabled="loading" @submit.prevent="
