@@ -6,6 +6,7 @@ import "core:fmt"
 import "core:strings"
 
 import "mysql"
+import "pkg/snowflake"
 
 Store :: struct {
 	c: ^mysql.MySQL,
@@ -65,7 +66,7 @@ store_destroy :: proc(store: ^Store) {
 	mysql.close(store.c)
 }
 
-store_create_share :: proc(store: ^Store, share: ^Share, allocator := context.temp_allocator) -> (id: i32, err: Store_Err, msg: string) {
+store_create_share :: proc(store: ^Store, share: ^Share, allocator := context.temp_allocator) -> (id: snowflake.ID, err: Store_Err, msg: string) {
 	context.allocator = allocator
 
 	stmt := mysql.stmt_init(store.c)
@@ -76,7 +77,7 @@ store_create_share :: proc(store: ^Store, share: ^Share, allocator := context.te
 	}
 	defer mysql.stmt_close(stmt)
 
-	stmt_str: cstring = "INSERT INTO shares VALUES (NULL, ?, ?, ?, ?, NULL)"
+	stmt_str: cstring = "INSERT INTO shares VALUES (?, ?, ?, ?, ?)"
 	if mysql.stmt_prepare(stmt, stmt_str, u64(len(stmt_str))) != 0 {
         err = .Other
         msg = string(mysql.stmt_error(stmt))
@@ -88,11 +89,16 @@ store_create_share :: proc(store: ^Store, share: ^Share, allocator := context.te
         return
 	}
 
-	binds := make([]mysql.Bind, 4)
-    binds[0], _ = mysql.bindp_text(share.code)
-    binds[1], _ = mysql.bindp_var_char(optimization_string(share.opts.optimization))
-    binds[2], _ = mysql.bindp_var_char(target_string(share.opts.target))
-    binds[3], _ = mysql.bindp_var_char(build_mode_string(share.opts.build_mode))
+
+	binds := make([]mysql.Bind, 5)
+
+    id = snowflake.generate()
+    binds[0]    = mysql.bindp_big_int(&id)
+
+    binds[1], _ = mysql.bindp_text(share.code)
+    binds[2], _ = mysql.bindp_var_char(optimization_string(share.opts.optimization))
+    binds[3], _ = mysql.bindp_var_char(target_string(share.opts.target))
+    binds[4], _ = mysql.bindp_var_char(build_mode_string(share.opts.build_mode))
 
 	if mysql.stmt_bind_param(stmt, raw_data(binds)) {
         err = .Other
@@ -115,10 +121,10 @@ store_create_share :: proc(store: ^Store, share: ^Share, allocator := context.te
 		return
 	}
 
-	return i32(mysql.insert_id(store.c)), .None, ""
+	return id, .None, ""
 }
 
-store_get_share :: proc(id: i32, res_allocator := context.allocator, temp_allocator := context.temp_allocator) -> (share: Share, err: Store_Err, msg: string) {
+store_get_share :: proc(id: snowflake.ID, res_allocator := context.allocator, temp_allocator := context.temp_allocator) -> (share: Share, err: Store_Err, msg: string) {
     context.allocator = temp_allocator // Allocator to use for c bindings and temporary allocations in this proc.
 
 	stmt := mysql.stmt_init(store.c)
@@ -142,8 +148,8 @@ store_get_share :: proc(id: i32, res_allocator := context.allocator, temp_alloca
 	}
 
 	binds := make([]mysql.Bind, 1)
-    cid := c.int(id)
-    binds[0] = mysql.bindp_int(&cid)
+    cid := c.longlong(id)
+    binds[0] = mysql.bindp_big_int(&cid)
 
 	if mysql.stmt_bind_param(stmt, raw_data(binds)) {
         err = .Other

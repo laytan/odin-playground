@@ -8,12 +8,11 @@ import "core:strconv"
 import "core:net"
 
 import http "pkg/odin-http"
+import "pkg/snowflake"
 
 port := #config(PORT, 8080)
 
 store: Store
-
-// TODO: friendly share id's (snowflake?).
 
 // TODO: stop ace editor selecting everything after a setValue call.
 main :: proc() {
@@ -35,9 +34,9 @@ main :: proc() {
 	http.router_init(&router)
 
     // TODO: get share doesn't encode json properly with unicode (at least with the default Hellope).
-	http.route_get(&router, "/api/share/(%d+)", http.handler(handle_get_share))
+	http.route_get(&router, "/api/share/(%w+)", http.handler(handle_get_share))
 	http.route_get(&router, "/", http.handler(handle_index))
-	http.route_get(&router, "/%d+", http.handler(handle_index))
+	http.route_get(&router, "/%w+", http.handler(handle_index))
     http.route_get(&router, "/favicon.ico", http.handler(handle_favicon))
 	http.route_get(&router, "(.*)", http.handler(handle_static))
 
@@ -135,7 +134,8 @@ handle_share :: proc(req: ^http.Request, res: ^http.Response) {
 	id, store_err, err_msg := store_create_share(&store, &share)
 	switch store_err {
 	case .None:
-		http.respond_plain(res, fmt.tprintf("/%i", id))
+        id_str := snowflake.base32(id)
+		http.respond_plain(res, fmt.tprintf("/%s", id_str))
 	case .Invalid:
 		http.respond_plain(res, err_msg)
 		res.status = .Unprocessable_Content
@@ -174,8 +174,14 @@ handle_static :: proc(req: ^http.Request, res: ^http.Response) {
 
 handle_get_share :: proc(req: ^http.Request, res: ^http.Response) {
 	id_str := req.url_params[0]
-	id := strconv.atoi(id_str)
-	share, err, err_msg := store_get_share(i32(id))
+    id, ok := snowflake.from_base32(transmute([]byte)id_str)
+    if !ok {
+        http.respond_plain(res, fmt.tprintf("%q is not a valid share format", id_str))
+        res.status = .Bad_Request
+        return
+    }
+
+	share, err, err_msg := store_get_share(id)
 	switch err {
 	case .None:
 		sr := Share_Json {

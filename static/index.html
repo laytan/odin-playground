@@ -255,7 +255,15 @@ main :: proc() {
                             class="btn btn-primary"
                             :disabled="loading"
                         >Create Link</button>
-                        <input x-ref="share_link_el" x-show="share_link != ''" class="form-control w-auto bg-dark text-light" readonly type="text" :value="share_link">
+                        <input
+                            x-ref="share_link_el"
+                            x-show="share_link != ''"
+                            :value="share_link"
+                            :style="{width: share_link.length + 'ch'}"
+                            class="form-control bg-dark text-light"
+                            readonly
+                            type="text"
+                        >
                         <div x-show="loading" class="spinner-border spinner-border-sm text-primary"></div>
                     </div>
                 </div>
