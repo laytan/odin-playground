@@ -125,6 +125,7 @@ main :: proc() {
                         .then((res) => { result = res; })
                         .finally(() => { loading = false; });
                     ">
+                        <p>Code is executed on Alpine Linux, other platforms are in the works.</p>
                         <div class="d-flex gap-3 align-items-center">
                             <button :disabled="loading" type="submit" class="btn btn-primary">Go</button>
                             <div x-show="loading" class="spinner-border spinner-border-sm text-primary" role="status"></div>
@@ -226,7 +227,7 @@ main :: proc() {
                     </div>
                 </div>
                 <div x-cloak x-show="tab == 'share'" x-data="{share_link: ''}">
-                    <p>Share your code and configuration by creating a unique link</p>
+                    <p>Share your code and configuration by creating a unique link.</p>
                     <div class="d-flex align-items-center gap-2">
                         <button
                             @click="

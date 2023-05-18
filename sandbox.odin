@@ -21,7 +21,7 @@ IMAGE_TAG :: "odin-playground:latest"
 @(private="file")
 MAX_SECONDS :: 5
 @(private="file")
-MAX_MEMORY  :: "1gb"
+MAX_MEMORY  :: "256mb"
 @(private="file")
 MAX_CPU :: "1"
 

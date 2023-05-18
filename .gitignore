@@ -1,5 +1,6 @@
 hiredis
 ace
 .terraform
-odin-playground.bin*
+odin-playground*
 .DS_Store
+build.sh
