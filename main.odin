@@ -14,6 +14,7 @@ port := #config(PORT, 8080)
 
 store: Store
 
+// TODO: front-end error handling.
 main :: proc() {
     when ODIN_DEBUG {
         context.logger = log.create_console_logger()
@@ -176,7 +177,7 @@ handle_get_share :: proc(req: ^http.Request, res: ^http.Response) {
     id, ok := snowflake.from_base32(transmute([]byte)id_str)
     if !ok {
         http.respond_plain(res, fmt.tprintf("%q is not a valid share format", id_str))
-        res.status = .Bad_Request
+        res.status = .NotFound
         return
     }
 
