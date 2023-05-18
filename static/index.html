@@ -55,7 +55,7 @@
         }"
         class="container-fluid bg-dark text-light vh-100 py-2"
     >
-        <div class="d-flex gap-5 h-100">
+        <div class="d-flex flex-wrap gap-5 h-100">
             <div
                 x-init="
                     window.editor = ace.edit('editor');
@@ -64,7 +64,7 @@
                 "
                 id="editor"
                 class="rounded rounded"
-                style="min-width: min(100%, 80ch);"
+                style="min-width: min(100%, 80ch); min-height: min(100%, 80ch);"
             >package main
 
 import "core:fmt"
@@ -227,7 +227,10 @@ main :: proc() {
                     </div>
                 </div>
                 <div x-cloak x-show="tab == 'share'" x-data="{share_link: ''}">
-                    <p>Share your code and configuration by creating a unique link.</p>
+                    <p>
+                        Share your code and configuration by creating a unique link.<br>
+                        <span class="text-muted">Sharing currently fails with certain foreign characters, to be investigated.</span>
+                    </p>
                     <div class="d-flex align-items-center gap-2">
                         <button
                             @click="

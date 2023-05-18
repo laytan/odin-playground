@@ -18,6 +18,8 @@ store: Store
 // TODO: println() should add newline on front-end too.
 
 // TODO: friendly share id's (snowflake?).
+
+// TODO: stop ace editor selecting everything after a setValue call.
 main :: proc() {
     when ODIN_DEBUG {
         context.logger = log.create_console_logger()
