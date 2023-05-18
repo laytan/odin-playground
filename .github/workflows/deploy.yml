@@ -22,13 +22,6 @@ jobs:
           script: |
             cd ~/odin-playground
             git pull
-
-            ~/odin/odin build . -o:speed \
-            -define:DB_HOST=${{ secrets.DB_HOST }} \
-            -define:DB_USERNAME=${{ secrets.DB_USERNAME }} \
-            -define:DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
-            -define:DB_NAME=odin-playground \
-            -define:PORT=80
-
+            ~/odin/odin build . -o:speed -define:DB_HOST=${{ secrets.DB_HOST }} -define:DB_USERNAME=${{ secrets.DB_USERNAME }} -define:DB_PASSWORD=${{ secrets.DB_PASSWORD }} -define:DB_NAME=odin-playground -define:PORT=80
             sudo pkill supervisord
             sudo supervisord -c supervisord.conf
