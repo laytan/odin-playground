@@ -215,7 +215,15 @@ sandbox_execute :: proc(code: []byte) -> (output: string, rerr: Sandbox_Error) {
         return command_output(&build_cmd), .CompilerError
     }
 
-    run_cmd := command_run(fmt.tprintf("timeout --kill-after=1s --signal=SIGINT %i docker run --runtime=runsc -v %s:/home/playground --init --cpus=%s --memory %s --rm %s sh -c \"/home/playground/main\"", MAX_SECONDS, dir, MAX_CPU, MAX_MEMORY, IMAGE_TAG))
+    // Volumes need to be absolute.
+    volume_path, err := os.absolute_path_from_relative(dir)
+    if err != 0 {
+        log.errorf("could not get absolute path for %q", dir)
+        rerr = .FileSystem
+        return
+    }
+
+    run_cmd := command_run(fmt.tprintf("timeout --kill-after=1s --signal=SIGINT %i docker run --runtime=runsc -v %s:/home/playground --init --cpus=%s --memory %s --rm %s sh -c \"./main\"", MAX_SECONDS, volume_path, MAX_CPU, MAX_MEMORY, IMAGE_TAG))
     defer command_destroy(&run_cmd)
 
     return string(command_output(&run_cmd)), .None
