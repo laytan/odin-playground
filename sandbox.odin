@@ -161,6 +161,7 @@ sandbox_execute :: proc(code: []byte, mode: Sandbox_Mode, asm_opts: Maybe(Assemb
         rerr = .FileSystem
         return
     }
+    // TODO: this does not work on server.
     defer os.remove(dir)
 
     fh, err := os.open(file, os.O_WRONLY|os.O_CREATE, 0o777)
