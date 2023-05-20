@@ -18,6 +18,7 @@ jobs:
           username: ubuntu
           key: ${{ secrets.SSH_KEY }}
           script_stop: true
+          # TODO: this randomly fails some times even though the action says it was successful.
           script: |
             cd ~/odin-playground
             git pull
