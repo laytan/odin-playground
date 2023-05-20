@@ -74,7 +74,7 @@ main :: proc() {
 
 
 handle_exec :: proc(req: ^http.Request, res: ^http.Response) {
-	body, err := http.request_body(req, MAX_CODE_BYTES)
+	body, _, err := http.request_body(req, MAX_CODE_BYTES)
 	if err != nil {
 		res.status = http.body_error_status(err)
 		return
@@ -214,7 +214,7 @@ respond_sandbox_result :: proc(res: ^http.Response, out: string, serr: Sandbox_E
 }
 
 parse_share_json :: proc(req: ^http.Request, res: ^http.Response) -> (share_req: Share_Json, opts: Assemble_Opts, ok: bool) {
-	body, err := http.request_body(req, MAX_CODE_BYTES)
+	body, _, err := http.request_body(req, MAX_CODE_BYTES)
 	if err != nil {
 		res.status = http.body_error_status(err)
 		return
