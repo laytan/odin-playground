@@ -7,13 +7,7 @@ import "core:os"
 import "core:c/libc"
 import "core:strings"
 import "core:log"
-
-@(private="file")
-r: rand.Rand
-
-sandbox_init :: proc() {
-    rand.init_as_system(&r)
-}
+import "pkg/snowflake"
 
 @(private="file")
 IMAGE_TAG :: "odin-playground:latest"
@@ -27,15 +21,11 @@ MAX_CPU :: "1"
 
 Sandbox_Error :: enum {
     None,
-    TimeoutExceeded, // TODO: detect timeout.
-    MemoryExceeded,  // TODO: detect memory limit.
-    CPUExceeded,     // TODO: add cpu limit and detect.
+    // TimeoutExceeded, // TODO: detect timeout.
+    // MemoryExceeded,  // TODO: detect memory limit.
+    // CPUExceeded,     // TODO: add cpu limit and detect.
     FileSystem,
-}
-
-Sandbox_Mode :: enum {
-    Assemble,
-    Execute,
+    CompilerError, // Error, with code, can be shown to user.
 }
 
 Optimization :: enum {
@@ -150,111 +140,117 @@ Assemble_Opts :: struct {
     build_mode:   Build_Mode,
 }
 
-// Executes the given code in the sandbox.
-// Returns the combined output of stdout and stderr.
-sandbox_execute :: proc(code: []byte, mode: Sandbox_Mode, asm_opts: Maybe(Assemble_Opts), allocator := context.allocator) -> (output: string, rerr: Sandbox_Error) {
-    file := temp_file(&r, allocator)
-    dir := filepath.dir(file, allocator)
+prep_directory :: proc(code: []byte) -> (dir: string, main: string, ok: bool) {
+    id := snowflake.base32(snowflake.generate())
+    dir = string(id[:])
+    main = strings.concatenate([]string{dir, "/main.odin"})
 
-    if err := os.make_directory(dir, 0o777); err != 0 {
-        log.errorf("could not create temp directory %q: %s", dir, err)
-        rerr = .FileSystem
+    if status := os.make_directory(dir); status != 0 {
+        log.errorf("could not make directory: %s: %i", dir, status)
         return
     }
-    // TODO: this does not work on server.
-    defer os.remove(dir)
+    defer if !ok do os.remove(dir)
 
-    fh, err := os.open(file, os.O_WRONLY|os.O_CREATE, 0o777)
-    if err != os.ERROR_NONE {
-        log.errorf("could not create source file: %s", err)
-        rerr = .FileSystem
+    if !os.write_entire_file(main, code) {
+        log.error("could not write file %q with the given code", main)
         return
     }
-    defer os.close(fh)
 
-    _, werr := os.write(fh, code)
-    if werr != os.ERROR_NONE {
-        log.errorf("could not write code %q to %q", code, file)
-        rerr = .FileSystem
-        return
-    }
-    defer os.remove(file)
+    ok = true
+    return
+}
 
-    // HACK: REALLY hacky, but for some reason the modes applied above don't actually do anything.
-    libc.system(strings.clone_to_cstring(fmt.tprintf("chmod -R 777 %s", dir)))
+sandbox_assemble :: proc(code: []byte, opts: Assemble_Opts) -> (output: string, rerr: Sandbox_Error) {
+    context.allocator = context.temp_allocator
 
-    out := strings.concatenate([]string{file, ".out"}, allocator)
-
-    container_cmd: string
-    switch mode {
-    case .Assemble:
-        opts := asm_opts.(Assemble_Opts)
-        t, b, o := target_string(opts.target), build_mode_string(opts.build_mode), optimization_string(opts.optimization)
-        out: string
-        switch opts.build_mode {
-        case .Assembly: out = "playground.S"
-        case .Llvm:     out = "playground.ll"
-        }
-
-        container_cmd = fmt.tprintf("odin build . -target:%s -build-mode:%s -o:%s && cat %s", t, b, o, out)
-    case .Execute:
-        container_cmd = fmt.tprintf("odin run .")
-    }
-
-    cmd := fmt.tprintf(
-        "timeout --kill-after=1s --signal=SIGTERM %i docker run -v %s:/home/playground --init --network none --cpus=%s --memory %s --rm %s sh -c \"%s\" > %s 2>&1",
-        MAX_SECONDS,
-        dir,
-        MAX_CPU,
-        MAX_MEMORY,
-        IMAGE_TAG,
-        container_cmd,
-        out,
-    )
-    log.debug(cmd)
-
-    handle := libc.system(strings.clone_to_cstring(cmd, allocator))
-    log.infof("system: %i", handle)
-
-    res, ok := os.read_entire_file_from_filename(out, allocator)
+    dir, main, ok := prep_directory(code)
     if !ok {
         rerr = .FileSystem
         return
     }
-    os.remove(out)
+    defer os.remove(dir)
+    defer os.remove(main)
 
-    output = string(res)
+    ext := opts.build_mode == .Llvm ? ".ll" : ".S"
+    out := strings.concatenate([]string{main[:len(main)-5], ext})
+    defer os.remove(out)
+
+    target, build_mode, optimization := target_string(opts.target), build_mode_string(opts.build_mode), optimization_string(opts.optimization)
+    cmd := command_run(fmt.tprintf("odin build %s -out:%s -target:%s -build-mode:%s -o:%s", dir, out, target, build_mode, optimization))
+    defer command_destroy(&cmd)
+
+    if command_success(&cmd) {
+        bytes, ok := os.read_entire_file_from_filename(out)
+        if !ok {
+            log.errorf("could not read output: %q", out)
+            rerr = .FileSystem
+            return
+        }
+
+        return string(bytes), nil
+    }
+
+    return command_output(&cmd), .CompilerError
+}
+
+sandbox_execute :: proc(code: []byte) -> (output: string, rerr: Sandbox_Error) {
+    context.allocator = context.temp_allocator
+
+    dir, main, ok := prep_directory(code)
+    if !ok {
+        rerr = .FileSystem
+        return
+    }
+    defer os.remove(dir)
+    defer os.remove(main)
+
+    out := main[:len(main)-5]
+    build_cmd := command_run(fmt.tprintf("odin build %s -out:%s -o:none -extra-linker-flags:\"-static\"", dir, out))
+    defer command_destroy(&build_cmd)
+
+    if !command_success(&build_cmd) {
+        return command_output(&build_cmd), .CompilerError
+    }
+
+    run_cmd := command_run(fmt.tprintf("timeout --kill-after=1s --signal=SIGINT %i docker run --runtime=runsc -v %s:/home/playground --init --cpus=%s --memory %s --rm %s sh -c \"./main\"", MAX_SECONDS, dir, MAX_CPU, MAX_MEMORY, IMAGE_TAG))
+    defer command_destroy(&run_cmd)
+
+    return string(command_output(&run_cmd)), .None
+}
+
+Command :: struct {
+    output_path: string,
+    exit_code: int,
+}
+
+command_run :: proc(sh: string) -> (cmd: Command) {
+    cmd.exit_code = 1
+
+    rand_path := snowflake.base32(snowflake.generate())
+    cmd.output_path = string(rand_path[:])
+
+    cmd_to_run := strings.concatenate([]string{sh, " 1>", cmd.output_path, " 2>&1"})
+
+    cmd.exit_code = int(libc.system(strings.clone_to_cstring(cmd_to_run)))
+
+    log.infof("Command: %q with exit code: %i", cmd_to_run, cmd.exit_code)
     return
 }
 
-@(private="file")
-RANDOM_CHOICES := []byte{
-    'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' \
+command_success :: proc(cmd: ^Command) -> bool {
+    return cmd.exit_code == 0
 }
 
-@(private="file")
-TMP :: "/tmp/playground-"
-@(private="file")
-TMP_LEN :: len(TMP)
-@(private="file")
-RANDOM_LEN :: 16
-@(private="file")
-MAIN :: "/main.odin"
-@(private="file")
-MAIN_LEN :: len(MAIN)
-
-@(private="file")
-temp_file :: proc(r: ^rand.Rand, allocator := context.temp_allocator) -> string {
-    u := make([]byte, TMP_LEN + RANDOM_LEN + MAIN_LEN, allocator)
-    copy(u, TMP)
-
-    for _, i in u[TMP_LEN:TMP_LEN+RANDOM_LEN] {
-        u[i+TMP_LEN] = rand.choice(RANDOM_CHOICES, r)
+command_output :: proc(cmd: ^Command) -> string {
+    bytes, ok := os.read_entire_file_from_filename(cmd.output_path)
+    if !ok {
+        log.errorf("Could not read command output file: %s", cmd.output_path)
+        return ""
     }
 
-    copy(u[TMP_LEN+RANDOM_LEN:], MAIN)
+    return string(bytes)
+}
 
-    return string(u)
+command_destroy :: proc(cmd: ^Command) {
+    os.remove(cmd.output_path)
 }

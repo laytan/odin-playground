@@ -25,8 +25,6 @@ main :: proc() {
 	store_init(&store)
 	defer store_destroy(&store)
 
-	sandbox_init()
-
 	s: http.Server
 	http.server_shutdown_on_interrupt(&s)
 
@@ -97,7 +95,7 @@ handle_exec :: proc(req: ^http.Request, res: ^http.Response) {
 		return
 	}
 
-	out, serr := sandbox_execute(transmute([]byte)input, .Execute, nil, req.allocator)
+	out, serr := sandbox_execute(transmute([]byte)input)
 	respond_sandbox_result(res, out, serr)
 }
 
@@ -120,7 +118,7 @@ handle_assemble :: proc(req: ^http.Request, res: ^http.Response) {
 		return
 	}
 
-	out, serr := sandbox_execute(transmute([]byte)share_req.code, .Assemble, opts, req.allocator)
+	out, serr := sandbox_assemble(transmute([]byte)share_req.code, opts)
 	respond_sandbox_result(res, out, serr)
 }
 
@@ -217,15 +215,18 @@ respond_sandbox_result :: proc(res: ^http.Response, out: string, serr: Sandbox_E
         http.respond_plain(res, "Unexpected error interacting with the file system")
         log.error("Sandbox filesystem error")
 		res.status = .Internal_Server_Error
-    case .CPUExceeded:
-        http.respond_plain(res, "Maximum CPU usage exceeded")
-		res.status = .Bad_Request
-    case .MemoryExceeded:
-        http.respond_plain(res, "Maximum memory usage exceeded")
-		res.status = .Bad_Request
-    case .TimeoutExceeded:
-        http.respond_plain(res, "Maximum time exceeded")
-		res.status = .Bad_Request
+  //   case .CPUExceeded:
+  //       http.respond_plain(res, "Maximum CPU usage exceeded")
+		// res.status = .Bad_Request
+  //   case .MemoryExceeded:
+  //       http.respond_plain(res, "Maximum memory usage exceeded")
+		// res.status = .Bad_Request
+  //   case .TimeoutExceeded:
+  //       http.respond_plain(res, "Maximum time exceeded")
+		// res.status = .Bad_Request
+    case .CompilerError:
+        http.respond_plain(res, fmt.tprintf("Code compilation failed: %s", out))
+        res.status = .Bad_Request
 	case .None:
 		http.respond_plain(res, out)
 	}
