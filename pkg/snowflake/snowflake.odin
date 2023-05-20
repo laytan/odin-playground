@@ -36,7 +36,8 @@ generate :: proc(machine_id: i64 = 1) -> ID {
 }
 
 // Returns an efficient base32 representation of the ID.
-base32 :: proc(id: ID) -> (str: [13]byte) {
+base32 :: proc(id: ID, allocator := context.allocator) -> (str: []byte) {
+	str = make([]byte, 13, allocator)
 	f := id
 	if f < 32 {
 		str[0] = ENC_TABLE[f]
@@ -57,12 +58,12 @@ base32 :: proc(id: ID) -> (str: [13]byte) {
 }
 
 from_base32 :: proc(bs: []byte) -> (id: ID, ok: bool) {
-    for b in bs {
-        if DEC_TABLE[b] == 0xFF do return
-        id = id*32 + i64(DEC_TABLE[b])
-    }
-    ok = true
-    return
+	for b in bs {
+		if DEC_TABLE[b] == 0xFF do return
+		id = id * 32 + i64(DEC_TABLE[b])
+	}
+	ok = true
+	return
 }
 
 // Returns the time that the given snowflake was generated with millisecond precision.
@@ -80,13 +81,13 @@ generation_time :: proc(id: ID) -> time.Time {
 @(private)
 @(init)
 init :: proc() {
-    for _, i in DEC_TABLE {
-        DEC_TABLE[i] = 0xFF
-    }
+	for _, i in DEC_TABLE {
+		DEC_TABLE[i] = 0xFF
+	}
 
-    for _, i in ENC_TABLE {
-        DEC_TABLE[ENC_TABLE[i]] = byte(i)
-    }
+	for _, i in ENC_TABLE {
+		DEC_TABLE[ENC_TABLE[i]] = byte(i)
+	}
 }
 
 @(private)
@@ -150,4 +151,4 @@ ENC_TABLE := [32]byte{
 }
 
 // Populated in init().
-DEC_TABLE : [256]byte
+DEC_TABLE: [256]byte
