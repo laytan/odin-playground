@@ -89,7 +89,7 @@ main :: proc() {
            program, accumulator)
 }</div>
             <div class="flex-grow-1 d-flex flex-column">
-                <ul class="nav nav-tabs mb-3" role="tablist">
+                <ul class="nav nav-tabs mb-3 align-items-end" role="tablist">
                     <li class="nav-item">
                         <button
                             @click="tab = 'exec'"
@@ -111,7 +111,14 @@ main :: proc() {
                             type="button"
                         >Share</button>
                     </li>
-                    <h1 class="h2 flex-grow-1 text-end m-0 p-0"><strong>Odin</strong> Playground</h1>
+                    <div class="flex-grow-1 text-end">
+                        <h1 class="h2 flex-grow-1 m-0 p-0"><strong>Odin</strong> Playground</h1>
+                        <span
+                            x-show="window.location.pathname.length > 1"
+                            x-text="window.location.pathname"
+                            class="text-muted"
+                        ></span>
+                    </div>
                 </ul>
 
                 <div x-show="tab == 'exec'" :class="{'flex-grow-1 flex-column': true, 'd-flex': tab == 'exec'}">
