@@ -17,9 +17,9 @@ jobs:
           script_stop: true
           script: |
             cd ~/odin
-            git pull --depth=1
+            git pull --depth=1 --recurse-submodules
             make
 
             cd ~/odin-playground
             sudo pkill supervisord
-            sudo supervisord -c supervisord.conf
+            supervisord -c supervisord.conf

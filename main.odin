@@ -13,7 +13,7 @@ port := #config(PORT, 8080)
 
 store: Store
 
-// TODO: update image every time a commit is don on master of odin repo.
+// TODO: update odin every time a commit is don on master of odin repo.
 // TODO: long output causes flexbox to shift, fix it.
 main :: proc() {
     when ODIN_DEBUG {
@@ -46,13 +46,13 @@ main :: proc() {
 	http.route_post(&post_router, "/api/share", http.handler(handle_share))
 
 	// Rate limit the post router.
-	limit_message := "Processing code is only allowed 10 times per minute."
+	limit_message := "Processing code is only allowed 6 times per minute."
 	post_handler := http.router_handler(&post_router)
 	post_rate_limited := http.middleware_rate_limit(
 		&post_handler,
 		&http.Rate_Limit_Opts{
 			window = time.Minute,
-			max = 10,
+			max = 6,
 			on_limit = http.on_limit_message(&limit_message),
 		},
 	)
