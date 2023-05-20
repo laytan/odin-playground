@@ -85,7 +85,7 @@ handle_exec :: proc(req: ^http.Request, res: ^http.Response) {
 	}
 
 	input, ok := body.(http.Body_Plain)
-	if ok {
+	if !ok {
         http.respond_plain(res, "Code should be sent in plain text")
 		res.status = .Bad_Request
 		return
