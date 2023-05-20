@@ -1,4 +1,4 @@
-name: Update Odin image
+name: Update Odin
 
 on:
   schedule:
@@ -16,5 +16,10 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           script_stop: true
           script: |
+            cd ~/odin
+            git pull --depth=1
+            make
+
             cd ~/odin-playground
-            sudo docker build --no-cache -t odin-playground:latest .
+            sudo pkill supervisord
+            sudo supervisord -c supervisord.conf
