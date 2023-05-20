@@ -71,6 +71,7 @@
             x-show="error"
             x-cloak
             class="position-absolute bottom-0 end-0 m-3 alert alert-danger"
+            :style="error ? 'z-index: 1;' : ''"
         >
             <strong>ERROR: </strong><span x-text="error"></span>
             <button @click="error = null" type="button" class="btn-close align-bottom ms-2" aria-label="Close"></button>
