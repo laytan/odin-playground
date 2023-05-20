@@ -19,6 +19,9 @@ MAX_MEMORY  :: "256mb"
 @(private="file")
 MAX_CPU :: "1"
 
+@(private="file")
+ODIN := #config(ODIN, "odin")
+
 Sandbox_Error :: enum {
     None,
     // TimeoutExceeded, // TODO: detect timeout.
@@ -176,7 +179,7 @@ sandbox_assemble :: proc(code: []byte, opts: Assemble_Opts) -> (output: string, 
     defer os.remove(out)
 
     target, build_mode, optimization := target_string(opts.target), build_mode_string(opts.build_mode), optimization_string(opts.optimization)
-    cmd := command_run(fmt.tprintf("odin build %s -out:%s -target:%s -build-mode:%s -o:%s", dir, out, target, build_mode, optimization))
+    cmd := command_run(fmt.tprintf("%s build %s -out:%s -target:%s -build-mode:%s -o:%s", ODIN, dir, out, target, build_mode, optimization))
     defer command_destroy(&cmd)
 
     if command_success(&cmd) {
@@ -205,7 +208,7 @@ sandbox_execute :: proc(code: []byte) -> (output: string, rerr: Sandbox_Error) {
     defer os.remove(main)
 
     out := main[:len(main)-5]
-    build_cmd := command_run(fmt.tprintf("odin build %s -out:%s -o:none -extra-linker-flags:\"-static\"", dir, out))
+    build_cmd := command_run(fmt.tprintf("%s build %s -out:%s -o:none -extra-linker-flags:\"-static\"", ODIN, dir, out))
     defer command_destroy(&build_cmd)
 
     if !command_success(&build_cmd) {
