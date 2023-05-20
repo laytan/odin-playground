@@ -215,7 +215,7 @@ sandbox_execute :: proc(code: []byte) -> (output: string, rerr: Sandbox_Error) {
         return command_output(&build_cmd), .CompilerError
     }
 
-    run_cmd := command_run(fmt.tprintf("timeout --kill-after=1s --signal=SIGINT %i docker run --runtime=runsc -v %s:/home/playground --init --cpus=%s --memory %s --rm %s sh -c \"./main\"", MAX_SECONDS, dir, MAX_CPU, MAX_MEMORY, IMAGE_TAG))
+    run_cmd := command_run(fmt.tprintf("timeout --kill-after=1s --signal=SIGINT %i docker run --runtime=runsc -v %s:/home/playground --init --cpus=%s --memory %s --rm %s sh -c \"/home/playground/main\"", MAX_SECONDS, dir, MAX_CPU, MAX_MEMORY, IMAGE_TAG))
     defer command_destroy(&run_cmd)
 
     return string(command_output(&run_cmd)), .None
