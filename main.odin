@@ -13,7 +13,8 @@ port := #config(PORT, 8080)
 
 store: Store
 
-// TODO: front-end error handling.
+// TODO: update image every time a commit is don on master of odin repo.
+// TODO: long output causes flexbox to shift, fix it.
 main :: proc() {
     when ODIN_DEBUG {
         context.logger = log.create_console_logger()
@@ -72,22 +73,27 @@ main :: proc() {
     }))
 }
 
-
 handle_exec :: proc(req: ^http.Request, res: ^http.Response) {
 	body, _, err := http.request_body(req, MAX_CODE_BYTES)
 	if err != nil {
+        #partial switch err {
+        case .Too_Long: http.respond_plain(res, "Too much code")
+        case:           http.respond_plain(res, fmt.tprintf("Could not read body: %s", err))
+        }
 		res.status = http.body_error_status(err)
 		return
 	}
 
 	input, ok := body.(http.Body_Plain)
-	if !ok {
+	if ok {
+        http.respond_plain(res, "Code should be sent in plain text")
 		res.status = .Bad_Request
 		return
 	}
 
 	if len(input) == 0 {
-		res.status = .Bad_Request
+        http.respond_plain(res, "Empty input, write some code")
+		res.status = .Unprocessable_Content
 		return
 	}
 
@@ -109,7 +115,8 @@ handle_assemble :: proc(req: ^http.Request, res: ^http.Response) {
     if !ok do return
 
 	if len(share_req.code) == 0 {
-		res.status = .Bad_Request
+        http.respond_plain(res, "Empty input, write some code")
+		res.status = .Unprocessable_Content
 		return
 	}
 
@@ -122,7 +129,8 @@ handle_share :: proc(req: ^http.Request, res: ^http.Response) {
     if !ok do return
 
 	if len(share_req.code) == 0 {
-		res.status = .Bad_Request
+        http.respond_plain(res, "Empty input, write some code")
+		res.status = .Unprocessable_Content
 		return
 	}
 
@@ -139,6 +147,7 @@ handle_share :: proc(req: ^http.Request, res: ^http.Response) {
 		http.respond_plain(res, err_msg)
 		res.status = .Unprocessable_Content
 	case .Out_Of_Memory, .Not_Found, .Logic, .Other, .Network:
+        http.respond_plain(res, "Could not create share because of an internal server error")
 		res.status = .Internal_Server_Error
 		log.errorf("creating share error: %s: %s", store_err, err_msg)
 	}
@@ -175,7 +184,7 @@ handle_get_share :: proc(req: ^http.Request, res: ^http.Response) {
 	id_str := req.url_params[0]
     id, ok := snowflake.from_base32(transmute([]byte)id_str)
     if !ok {
-        http.respond_plain(res, fmt.tprintf("%q is not a valid share format", id_str))
+        http.respond_plain(res, fmt.tprintf("%q is not in a valid share format", id_str))
         res.status = .NotFound
         return
     }
@@ -200,13 +209,22 @@ handle_get_share :: proc(req: ^http.Request, res: ^http.Response) {
 	}
 }
 
-MAX_CODE_BYTES :: 6000
+MAX_CODE_BYTES :: 12000
 
 respond_sandbox_result :: proc(res: ^http.Response, out: string, serr: Sandbox_Error) {
 	switch serr {
 	case .FileSystem:
+        http.respond_plain(res, "Unexpected error interacting with the file system")
+        log.error("Sandbox filesystem error")
 		res.status = .Internal_Server_Error
-	case .CPUExceeded, .MemoryExceeded, .TimeoutExceeded:
+    case .CPUExceeded:
+        http.respond_plain(res, "Maximum CPU usage exceeded")
+		res.status = .Bad_Request
+    case .MemoryExceeded:
+        http.respond_plain(res, "Maximum memory usage exceeded")
+		res.status = .Bad_Request
+    case .TimeoutExceeded:
+        http.respond_plain(res, "Maximum time exceeded")
 		res.status = .Bad_Request
 	case .None:
 		http.respond_plain(res, out)
@@ -222,30 +240,34 @@ parse_share_json :: proc(req: ^http.Request, res: ^http.Response) -> (share_req:
 
 	input, bok := body.(http.Body_Plain)
 	if !bok {
+        http.respond_plain(res, "Code should be sent as plain text")
 		res.status = .Unprocessable_Content
 		return
 	}
 
 	if err := json.unmarshal(transmute([]byte)input, &share_req); err != nil {
-		http.respond_plain(res, fmt.tprintf("body is invalid: %s", err))
+		http.respond_plain(res, fmt.tprintf("Could not decode JSON body: %s", err))
 		res.status = .Unprocessable_Content
 		return
 	}
 
 	opts.optimization, ok = optimization_from_string(share_req.opts.optimization)
 	if !ok {
+        http.respond_plain(res, fmt.tprintf("%q is an invalid optimization setting", share_req.opts.optimization))
 		res.status = .Unprocessable_Content
 		return
 	}
 
 	opts.target, ok = target_from_string(share_req.opts.target)
 	if !ok {
+        http.respond_plain(res, fmt.tprintf("%q is an invalid target setting", share_req.opts.target))
 		res.status = .Unprocessable_Content
 		return
 	}
 
 	opts.build_mode, ok = build_mode_from_string(share_req.opts.build_mode)
 	if !ok {
+        http.respond_plain(res, fmt.tprintf("%q is an invalid build mode setting", share_req.opts.build_mode))
 		res.status = .Unprocessable_Content
 		return
 	}

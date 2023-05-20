@@ -31,6 +31,7 @@
     <body
         x-data="{
             loading: true,
+            error: null,
             result: '',
             opts: {
                 target: 'linux_amd64',
@@ -46,17 +47,35 @@
                 }
 
                 fetch('/api/share' + url.pathname)
-                    .then((res) => res.json())
-                    .then((json) => {
-                        window.editor.setValue(json.code);
-                        window.editor.clearSelection();
-                        this.opts = json.opts;
-                    })
-                    .finally(() => { this.loading = false; });
+                .then(async (res) => {
+                    if (!res.ok) {
+                        this.error = await res.text();
+                        return;
+                    }
+
+                    const json = await res.json();
+                    window.editor.setValue(json.code);
+                    window.editor.clearSelection();
+                    this.opts = json.opts;
+                })
+                .catch(err => { // Probably invalid JSON has been returned.
+                    console.error(err);
+                    this.error = err;
+                })
+                .finally(() => { this.loading = false; });
             },
         }"
         class="container-fluid bg-dark text-light vh-100 py-2"
     >
+        <div
+            x-show="error"
+            x-cloak
+            class="position-absolute bottom-0 end-0 m-3 alert alert-danger"
+        >
+            <strong>ERROR: </strong><span x-text="error"></span>
+            <button @click="error = null" type="button" class="btn-close align-bottom ms-2" aria-label="Close"></button>
+        </div>
+
         <div class="d-flex flex-wrap gap-5 h-100">
             <div
                 x-init="
@@ -130,8 +149,14 @@ main :: proc() {
                             method: 'POST',
                             body: editor.getValue(),
                         })
-                        .then((res) => res.text())
-                        .then((res) => { result = res; })
+                        .then(async (res) => {
+                            if (!res.ok) {
+                                error = await res.text();
+                                return;
+                            }
+
+                            result = await res.text();
+                        })
                         .finally(() => { loading = false; });
                     ">
                     <p>Code is executed on Alpine Linux, other platforms are in the works.<br>
@@ -155,9 +180,14 @@ main :: proc() {
                                 opts,
                             }),
                         })
-                        .then((res) => res.text())
-                        .then((res) => {
-                            window.asm.setValue(res);
+                        .then(async (res) => {
+                            if (!res.ok) {
+                                error = await res.text();
+                                return;
+                            }
+
+                            const assembled = await res.text();
+                            window.asm.setValue(assembled);
                             window.asm.clearSelection();
                             window.asm.session.foldAll();
                             window.asm.gotoLine(window.asm.find('main').start.row);
@@ -255,8 +285,13 @@ main :: proc() {
                                         opts,
                                     }),
                                 })
-                                .then((res) => res.text())
-                                .then((id) => {
+                                .then(async (res) => {
+                                    if (!res.ok) {
+                                        error = await res.text();
+                                        return
+                                    }
+
+                                    const id = await res.text();
                                     share_link = `${location.protocol}//${location.host}${id}`;
                                     setTimeout(() => {$refs.share_link_el.select(); }, 100);
                                 })
