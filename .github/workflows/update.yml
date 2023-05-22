@@ -23,7 +23,7 @@ jobs:
 
             cd ~/odin-playground
             git pull --depth=1 --recurse-submodules
-            ~/odin/odin build . -o:speed -define:ODIN="/home/ubuntu/odin/odin" -define:ODIN_VERSION_DETAILED="$(/home/ubuntu/odin/odin version)" -define:GITHUB_AUTH_HEADER=${{ secrets._GITHUB_AUTH_HEADER }} -define:DB_HOST=${{ secrets.DB_HOST }} -define:DB_USERNAME=${{ secrets.DB_USERNAME }} -define:DB_PASSWORD=${{ secrets.DB_PASSWORD }} -define:DB_NAME=odin-playground -define:PORT=80
+            ~/odin/odin build . -o:speed -define:ODIN="/home/ubuntu/odin/odin" -define:ODIN_VERSION_DETAILED="$(/home/ubuntu/odin/odin version)" -define:GITHUB_AUTH_HEADER="${{ secrets._GITHUB_AUTH_HEADER }}" -define:DB_HOST=${{ secrets.DB_HOST }} -define:DB_USERNAME=${{ secrets.DB_USERNAME }} -define:DB_PASSWORD=${{ secrets.DB_PASSWORD }} -define:DB_NAME=odin-playground -define:PORT=80
             sudo setcap CAP_NET_BIND_SERVICE=+eip /home/ubuntu/odin-playground/odin-playground
             sudo pkill supervisord
             sudo pkill odin
