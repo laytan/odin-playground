@@ -44,10 +44,10 @@ GitHub_Commits_Response :: struct {
 odin_update_track :: proc() {
     thread.run(proc() {
         for {
-            time.sleep(CHECK_INTERVAL)
             if odin_update_check() {
                 break
             }
+            time.sleep(CHECK_INTERVAL)
         }
     }, context)
 }
@@ -59,9 +59,9 @@ odin_update_check :: proc() -> (triggered: bool) {
 	client.request_init(&req, .Get)
 	defer client.request_destroy(&req)
 
-    req.headers["X-GitHub-Api-Version"] = GITHUB_API_VERSION
-    req.headers["Accept"] = GITHUB_ACCEPT_JSON
-    req.headers["Authorization"] = GITHUB_AUTH_HEADER
+    req.headers["x-gitHub-api-version"] = GITHUB_API_VERSION
+    req.headers["accept"] = GITHUB_ACCEPT_JSON
+    req.headers["authorization"] = GITHUB_AUTH_HEADER
 
     res, err := client.request("https://api.github.com/repos/odin-lang/Odin/branches/master", &req)
     if err != nil {
@@ -97,6 +97,7 @@ odin_update_check :: proc() -> (triggered: bool) {
         }
 
         log.debug("Odin has not been updated since compiling")
+        return
     }
 
     log.errorf("GitHub response body was not plain text?: %v", body)
@@ -110,9 +111,9 @@ odin_update_trigger :: proc() {
 
     bytes.buffer_write_string(&req.body, `{"ref": "main"}`)
 
-    req.headers["X-GitHub-Api-Version"] = GITHUB_API_VERSION
-    req.headers["Accept"] = GITHUB_ACCEPT_JSON
-    req.headers["Authorization"] = GITHUB_AUTH_HEADER
+    req.headers["x-gitHub-api-version"] = GITHUB_API_VERSION
+    req.headers["accept"] = GITHUB_ACCEPT_JSON
+    req.headers["authorization"] = GITHUB_AUTH_HEADER
 
     res, err := client.request("https://api.github.com/repos/laytan/odin-playground/actions/workflows/update.yml/dispatches", &req)
     if err != nil {

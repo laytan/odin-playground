@@ -22,6 +22,8 @@ main :: proc() {
         context.logger = log.create_console_logger(log.Level.Info)
     }
 
+    log.info("Hello, World!")
+
     odin_update_track()
 
 	store_init(&store)
@@ -33,7 +35,6 @@ main :: proc() {
 	router: http.Router
 	http.router_init(&router)
 
-    // TODO: get share doesn't encode json properly with unicode (at least with the default Hellope).
 	http.route_get(&router, "/api/share/(%w+)", http.handler(handle_get_share))
 	http.route_get(&router, "/", http.handler(handle_index))
 	http.route_get(&router, "/%w+", http.handler(handle_index))
