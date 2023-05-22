@@ -160,7 +160,8 @@ main :: proc() {
                         .finally(() => { loading = false; });
                     ">
                     <p>Code is executed on Alpine Linux.<br>
-                       Odin is updated daily at midnight UTC to the latest commit on master.</p>
+                       The Odin version used is the latest commit on master (checked every 5 minutes).
+                       </p>
                         <div class="d-flex gap-3 align-items-center">
                             <button :disabled="loading" type="submit" class="btn btn-primary">Go</button>
                             <div x-show="loading" class="spinner-border spinner-border-sm text-primary" role="status"></div>

@@ -22,6 +22,8 @@ main :: proc() {
         context.logger = log.create_console_logger(log.Level.Info)
     }
 
+    odin_update_track()
+
 	store_init(&store)
 	defer store_destroy(&store)
 
