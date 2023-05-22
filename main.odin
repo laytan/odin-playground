@@ -36,7 +36,6 @@ main :: proc() {
 	http.route_get(&router, "/", http.handler(handle_index))
 	http.route_get(&router, "/%w+", http.handler(handle_index))
     http.route_get(&router, "/favicon.ico", http.handler(handle_favicon))
-	http.route_get(&router, "(.*)", http.handler(handle_static))
 
 	post_router: http.Router
 	http.router_init(&post_router)
@@ -169,13 +168,6 @@ favicon := #load("./static/favicon.ico")
 handle_favicon :: proc(req: ^http.Request, res: ^http.Response) {
 	res.headers["Cache-Control"] = "public, max-age=" + DAY_IN_SECONDS
 	http.respond_file_content(res, "favicon.ico", favicon)
-}
-
-handle_static :: proc(req: ^http.Request, res: ^http.Response) {
-	http.respond_dir(res, "/", "./static", req.url.path, req.allocator)
-	if res.status == .NotFound || http.status_success(res.status) {
-		res.headers["Cache-Control"] = "public, max-age=" + DAY_IN_SECONDS
-	}
 }
 
 handle_get_share :: proc(req: ^http.Request, res: ^http.Response) {
