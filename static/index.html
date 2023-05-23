@@ -39,9 +39,28 @@
             },
             tab: 'exec',
             init() {
+                window.editor = ace.edit('editor');
+                window.editor.setTheme('ace/theme/one_dark');
+                window.editor.session.setMode('ace/mode/odin');
+
+                let timer;
+                window.editor.session.addEventListener('change', () => {
+                    clearTimeout(timer);
+                    timer = setTimeout(() => {
+                        localStorage.setItem('code', window.editor.getValue());
+                    }, 1000);
+                });
+
                 const url = new URL(location);
                 if (url.pathname == '/') {
                     this.loading = false;
+
+                    const saved = window.localStorage.getItem('code');
+                    if (saved && saved.length && saved.length > 0) {
+                        window.editor.setValue(saved);
+                        window.editor.clearSelection();
+                    }
+
                     return;
                 }
 
@@ -78,11 +97,6 @@
 
         <div class="d-flex flex-wrap gap-5 h-100">
             <div
-                x-init="
-                    window.editor = ace.edit('editor');
-                    window.editor.setTheme('ace/theme/one_dark');
-                    window.editor.session.setMode('ace/mode/odin');
-                "
                 id="editor"
                 class="rounded rounded"
                 style="min-width: min(100%, 80ch); min-height: min(100%, 80ch);"
