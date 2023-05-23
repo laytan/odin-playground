@@ -104,12 +104,16 @@ odin_update_check :: proc() -> (triggered: bool) {
     return
 }
 
+Workflow_Trigger_Request :: struct {
+    ref: string,
+}
+
 odin_update_trigger :: proc() {
     req: client.Request
     client.request_init(&req, .Post)
     defer client.request_destroy(&req)
 
-    bytes.buffer_write_string(&req.body, `{"ref": "main"}`)
+    client.with_json(&req, Workflow_Trigger_Request{ref = "main"})
 
     req.headers["x-gitHub-api-version"] = GITHUB_API_VERSION
     req.headers["accept"] = GITHUB_ACCEPT_JSON

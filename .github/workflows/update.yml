@@ -1,7 +1,7 @@
 name: Update Odin
 
 on:
-  repository_dispatch:
+  workflow_dispatch:
 
 concurrency: deploy
 
