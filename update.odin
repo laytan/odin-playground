@@ -106,7 +106,7 @@ odin_update_check :: proc() -> (triggered: bool) {
 
 odin_update_trigger :: proc() {
     req: client.Request
-    client.request_init(&req)
+    client.request_init(&req, .Post)
     defer client.request_destroy(&req)
 
     bytes.buffer_write_string(&req.body, `{"ref": "main"}`)
@@ -127,7 +127,7 @@ odin_update_trigger :: proc() {
 
         body, alloc, err := client.response_body(&res)
         if err == nil {
-            log.error("unexpected body: %s", body)
+            log.errorf("unexpected body: %s", body)
             client.body_destroy(body, alloc)
         }
     }
