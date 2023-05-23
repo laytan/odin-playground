@@ -123,6 +123,12 @@ odin_update_trigger :: proc() {
     defer client.response_destroy(&res)
 
     if res.status != .No_Content {
-        log.errorf("Unexpected status code from workflow dispatch: %s", err)
+        log.errorf("Unexpected status code from workflow dispatch: %s", res.status)
+
+        body, alloc, err := client.response_body(&res)
+        if err == nil {
+            log.error("unexpected body: %s", body)
+            client.body_destroy(body, alloc)
+        }
     }
 }
