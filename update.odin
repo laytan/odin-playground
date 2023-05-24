@@ -7,8 +7,8 @@ import "core:bytes"
 import "core:thread"
 import "core:time"
 
-import "pkg/odin-http/client"
-import http "pkg/odin-http"
+import "pkg/http"
+import "pkg/http/client"
 
 ODIN_VERSION_DETAILED := #config(ODIN_VERSION_DETAILED, "")
 ODIN_VERSION_SHORT_SHA: string

@@ -6,7 +6,7 @@ import "core:time"
 import "core:fmt"
 import "core:net"
 
-import http "pkg/odin-http"
+import "pkg/http"
 import "pkg/snowflake"
 
 port := #config(PORT, 8080)

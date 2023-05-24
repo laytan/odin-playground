@@ -1,3 +1,6 @@
-[submodule "pkg/odin-http"]
-	path = pkg/odin-http
+[submodule "pkg/http"]
+	path = pkg/http
 	url = https://github.com/laytan/odin-http
+[submodule "pkg/mysql"]
+	path = pkg/mysql
+	url = https://github.com/laytan/odin-mysql

@@ -5,7 +5,7 @@ import "core:c"
 import "core:fmt"
 import "core:strings"
 
-import "mysql"
+import "pkg/mysql"
 import "pkg/snowflake"
 
 Store :: struct {
