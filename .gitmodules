@@ -4,3 +4,6 @@
 [submodule "pkg/mysql"]
 	path = pkg/mysql
 	url = https://github.com/laytan/odin-mysql
+[submodule "pkg/snowflake"]
+	path = pkg/snowflake
+	url = https://github.com/laytan/odin-snowflake
