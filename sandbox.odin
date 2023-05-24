@@ -246,11 +246,13 @@ sandbox_execute :: proc(code: []byte) -> (output: string, rerr: Sandbox_Error) {
     //   Makes the entrypoint in the container an initialization script from Docker which listens for signals (needed for timeout to work).
     // - "--cpus %s --memory %s"
     //   Limit the memory and cpu usage of the container.
+    // - "--network none"
+    //   Disable networking.
     // - "--rm"
     //   Remove the container when it exits.
     // - "sh -c "./main""
     //   The command that is ran in the container, this executes the ./main binary which was copied using the volume.
-    run_cmd := command_run(fmt.tprintf("timeout --kill-after=1s --signal=SIGINT %i docker run --runtime=runsc -v %s:/home/playground --init --cpus=%s --memory %s --rm %s sh -c \"./main\"", MAX_SECONDS, volume_path, MAX_CPU, MAX_MEMORY, IMAGE_TAG))
+    run_cmd := command_run(fmt.tprintf("timeout --kill-after=1s --signal=SIGINT %i docker run --runtime=runsc -v %s:/home/playground --init --cpus=%s --memory %s --network none --rm %s sh -c \"./main\"", MAX_SECONDS, volume_path, MAX_CPU, MAX_MEMORY, IMAGE_TAG))
     defer command_destroy(&run_cmd)
 
     return string(command_output(&run_cmd)), .None
