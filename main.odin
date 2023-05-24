@@ -24,7 +24,9 @@ main :: proc() {
 
     log.info("Hello, World!")
 
-    odin_update_track()
+    when !ODIN_DEBUG {
+        odin_update_track()
+    }
 
 	store_init(&store)
 	defer store_destroy(&store)
