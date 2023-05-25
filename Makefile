@@ -1,7 +1,8 @@
-ODIN ?= ~/odin/odin
+ODIN ?= odin
 DB_NAME ?= odin-playground
 PORT ?= 8080
 CONFIG = \
+	-define:ODIN=$(ODIN) \
 	-define:DB_HOST=$(DB_HOST) \
 	-define:DB_USERNAME=$(DB_USERNAME) \
 	-define:DB_PASSWORD=$(DB_PASSWORD) \
