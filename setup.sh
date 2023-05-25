@@ -35,6 +35,9 @@ git clone --depth=1 https://github.com/odin-lang/Odin /home/ubuntu/odin
 cd /home/ubuntu/odin
 make
 
+# Add Odin to path.
+echo "PATH=/home/ubuntu/odin:\$PATH" >> /home/ubuntu/.bashrc
+
 # Clone playground and build docker image.
 git clone --depth=1 --recurse-submodules https://github.com/laytan/odin-playground /home/ubuntu/odin-playground
 cd /home/ubuntu/odin-playground
