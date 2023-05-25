@@ -1,4 +1,4 @@
-ODIN ?= odin
+ODIN ?= ~/odin/odin
 DB_NAME ?= odin-playground
 PORT ?= 8080
 CONFIG = \
