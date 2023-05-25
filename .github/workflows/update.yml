@@ -23,7 +23,7 @@ jobs:
 
             cd /home/ubuntu/odin-playground
 
-            git pull --depth=1 --recurse-submodules
+            git reset --hard origin/main
             git submodule foreach git submodule init
             git submodule update --recursive
 
