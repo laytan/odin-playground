@@ -27,6 +27,9 @@ sudo usermod -aG docker ubuntu
 sudo su ubuntu
 newgrp
 
+# Use ubuntu user from now on.
+sudo su ubuntu
+
 # Clone and compile Odin.
 git clone --depth=1 https://github.com/odin-lang/Odin /home/ubuntu/odin
 cd /home/ubuntu/odin
