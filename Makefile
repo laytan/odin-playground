@@ -1,6 +1,6 @@
-ODIN = odin
-DB_NAME = odin-playground
-PORT = 8080
+ODIN ?= odin
+DB_NAME ?= odin-playground
+PORT ?= 8080
 CONFIG = \
 	-define:DB_HOST=$(DB_HOST) \
 	-define:DB_USERNAME=$(DB_USERNAME) \
