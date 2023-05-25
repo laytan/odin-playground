@@ -22,6 +22,10 @@ echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/gviso
 sudo apt-get update
 DEBIAN_FRONTEND=noninteractive sudo apt-get install -y runsc
 
+# Add runsc runtime to docker.
+sudo runsc install
+sudo systemctl reload docker
+
 # Add the ubuntu user to the docker user group.
 sudo usermod -aG docker ubuntu
 sudo su ubuntu
