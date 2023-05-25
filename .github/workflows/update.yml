@@ -32,5 +32,4 @@ jobs:
             sudo setcap CAP_NET_BIND_SERVICE=+eip /home/ubuntu/odin-playground/odin-playground
 
             sudo pkill supervisord
-            sudo pkill odin
             supervisord -c supervisord.conf
