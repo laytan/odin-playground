@@ -17,16 +17,19 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           script_stop: true
           script: |
-            cd ~/odin
-            git reset --hard origin/master
-            git pull --depth=1 --recurse-submodules
+            cd /home/ubuntu/odin
+            git pull --depth=1
             make
 
-            cd ~/odin-playground
-            git reset --hard origin/main
+            cd /home/ubuntu/odin-playground
+
             git pull --depth=1 --recurse-submodules
-            ~/odin/odin build . -o:speed -define:ODIN="/home/ubuntu/odin/odin" -define:ODIN_VERSION_DETAILED="$(/home/ubuntu/odin/odin version)" -define:GITHUB_AUTH_HEADER="${{ secrets._GITHUB_AUTH_HEADER }}" -define:DB_HOST=${{ secrets.DB_HOST }} -define:DB_USERNAME=${{ secrets.DB_USERNAME }} -define:DB_PASSWORD=${{ secrets.DB_PASSWORD }} -define:DB_NAME=odin-playground -define:PORT=80
+            git submodule foreach git submodule init
+            git submodule update --recursive
+
+            ODIN=/home/ubuntu/odin/odin DB_HOST=${{ secrets.DB_HOST }} DB_USERNAME=${{ secrets.DB_USERNAME }} DB_PASSWORD=${{ secrets.DB_PASSWORD }} GITHUB_AUTH_HEADER=${{ secrets.GITHUB_AUTH_HEADER }} make
             sudo setcap CAP_NET_BIND_SERVICE=+eip /home/ubuntu/odin-playground/odin-playground
+
             sudo pkill supervisord
             sudo pkill odin
             supervisord -c supervisord.conf
