@@ -153,7 +153,7 @@ prep_directory :: proc(code: []byte) -> (dir: string, main: string, ok: bool) {
         log.errorf("could not make directory: %s: %i", dir, status)
         return
     }
-    defer if !ok do os.remove(dir)
+    defer if !ok do rmdir(dir)
 
     if !os.write_entire_file(main, code) {
         log.error("could not write file %q with the given code", main)
@@ -174,7 +174,7 @@ sandbox_assemble :: proc(code: []byte, opts: Assemble_Opts) -> (output: string, 
         rerr = .FileSystem
         return
     }
-    defer os.remove(dir)
+    defer rmdir(dir)
     defer os.remove(main)
 
     ext := opts.build_mode == .Llvm ? ".ll" : ".S"
@@ -211,7 +211,7 @@ sandbox_execute :: proc(code: []byte) -> (output: string, rerr: Sandbox_Error) {
         rerr = .FileSystem
         return
     }
-    defer os.remove(dir)
+    defer rmdir(dir)
     defer os.remove(main)
 
     out := main[:len(main)-5]
@@ -256,4 +256,16 @@ sandbox_execute :: proc(code: []byte) -> (output: string, rerr: Sandbox_Error) {
     defer command_destroy(&run_cmd)
 
     return string(command_output(&run_cmd)), .None
+}
+
+rmdir :: proc(path: string) {
+    when ODIN_OS == .Linux {
+        if err := os.remove_directory(path); err != os.ERROR_NONE {
+            log.errorf("error removing directory %q: %s", path, err)
+        }
+    } else {
+        if !os.remove(path) {
+            log.errorf("error removing directory %q", path)
+        }
+    }
 }
